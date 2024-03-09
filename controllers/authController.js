@@ -2,6 +2,10 @@ const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const jwt = require('jsonwebtoken');
 const AppError = require('../utils/appErrors');
+const { promisify } = require('util');
+const { CurrencyCodes } = require('validator/lib/isISO4217');
+
+//token signup and login diff
 
 const generateToken = function (id) {
 
@@ -55,4 +59,43 @@ exports.login = catchAsync(async (req, res, next) => {
             token
         })
     }
+});
+
+exports.protect = catchAsync(async (req, res, next) => {
+    // 1) check is have headers authorization
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+        console.log(token);
+    }
+
+    if (!token) {
+        return next(new AppError('You are not logged in, pls log in to get access', 401));
+    }
+
+    //2) Verification token
+    // promisify: convert a callback fn to promise
+    // verify is a promise fn
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    console.log(decoded); //{id:..., iat:..., exp:...}
+
+    // 3) check if user still exists
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+        return next(new AppError('The user belonging to this token does no longer exist!', 401))
+    }
+
+   
+    // 4)check if user changed password after the token was issued
+    // modifi userSchema: add timestamp, add method changedPassword, to check password is changed?
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+        return next(new AppError('User recently changed password! Please log in again!', 401));
+    };
+
+    // GRANT ACCESS TO PROTECTED ROUTE
+    req.user = currentUser;
+    next();
+
 })
+
+// invalid signature: wrong Bearer token, maybe in jwt.verify
