@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
         minlength: 8,
         select: false
     },
-    confirmPassword: {
+    passwordConfirm: {
         type: String,
         required: [true, 'Please provide your name!'],
         validate: {
@@ -57,8 +57,8 @@ userSchema.pre('save', async function(next) {
     // hash: used for asynchonously, return a promise
     // hashSync: used for synchonously
 
-    // delete confirmpassword fields because it has not hash
-    this.confirmPassword = undefined;
+    // delete passwordConfirm fields because it has not hash
+    this.passwordConfirm = undefined;
     next();
 });
 

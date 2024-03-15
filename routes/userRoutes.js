@@ -4,11 +4,13 @@ const authController = require('../controllers/authController');
 const sendEmail = require('../utils/email');
 const router = express.Router();
 
-router.route('/signup').post(authController.signup);
-router.route('/login').post(authController.login);
+router.post('/signup', authController.signup);
+router.post('/login', authController.login);
 
-router.route('/forgotPassword').post(authController.forgotPassword);
-router.route('/resetPassword/:token').post(authController.resetPassword);
+router.post('/forgotPassword', authController.forgotPassword);
+router.patch('/resetPassword/:token', authController.resetPassword);
+
+router.patch('/updateMyPassword', authController.protect, authController.updatePassword);
 
 router
     .route('/')

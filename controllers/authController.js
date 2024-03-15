@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const jwt = require('jsonwebtoken');
@@ -7,33 +8,32 @@ const { promisify } = require('util');
 
 //token signup and login diff
 
-const generateToken = function (id) {
-
+const signToken = function (id) {
     // { id: newUser._id} correct syntax
     return jwt.sign({id}, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRE_IN
     })
-}
+};
+
+const createSendToken = (user, statusCode, res) => {
+    const token = signToken(user._id);
+    
+    res.status(statusCode).json({
+        status: 'success',
+        token
+    });
+};
 
 exports.signup = catchAsync(async (req, res) => {
     const newUser = await User.create({
         name: req.body.name,
         email: req.body.email,
         password: req.body.password,
-        confirmPassword: req.body.confirmPassword,
+        passwordConfirm: req.body.passwordConfirm,
         role: req.body.role,
     });
 
-
-    const token = generateToken(newUser._id);
-    
-    res.status(200).json({
-        status: 'success',
-        token,
-        message: {
-            data: newUser
-        }
-    })
+    createSendToken(newUser, 200, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -44,22 +44,17 @@ exports.login = catchAsync(async (req, res, next) => {
         return next(new AppError('Incorrect email or password', 400));
     }
 
-    const userFound = await User.findOne({email}).select('+password');
-    const correct = await userFound.correctPassword(password, userFound.password);
-    console.log(userFound);
+    const user = await User.findOne({email}).select('+password');
+    const correct = await user.correctPassword(password, user.password);
+    console.log(user);
     // 2/ check correct password
     if (!correct) {
         return next(new AppError('Wrong password, please try again!', 401));
     }
 
     // 3/ if correctpassword send token to client
-    const token = generateToken(userFound._id);
-    if (userFound) {
-        res.status(200).json({
-            status: 'success',
-            token
-        })
-    }
+    createSendToken(user, 200, res);
+
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -147,8 +142,53 @@ exports.forgotPassword = catchAsync( async (req, res, next) => {
 
 });
 
-exports.resetPassword = catchAsync( async (req, res, next) => {
+exports.resetPassword = catchAsync(async(req, res, next) => {
+    // 1) Get user based on the token
+    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
 
-})
+    const user = await User.findOne({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: Date.now() } 
+    });
+
+    // 2) If token has not expired, and there is user, set the new password
+    if (!user) {
+        return next(new AppError('Token is invalid or has expired!', 400));
+    }
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    // 3) Update changedPasswordAt property for the user
+
+    // 4) Log the user in, send JWT
+    createSendToken(user, 200, res);
+});
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+    // 1) Get posted user
+    const user = await User.findById(req.user.id).select('+password');
+    console.log(user);
+    if (!user) {
+        return next(new AppError(`Can't find the user with email address`, 404))
+    }
+
+    // 2) check password is correct
+    const correct = await user.correctPassword(req.body.passwordCurrent, user.password);
+    if (!correct) {
+        return next(new AppError(`Wrong password current, please try again!`, 401))
+    }
+
+    // 3) if so, update password
+    user.password = req.body.newPassword;
+    user.passwordConfirm = req.body.passwordConfirm;
+    await user.save();
+
+    // 4) send JWT
+    createSendToken(user, 200, res);
+});
+
 
 // invalid signature: wrong Bearer token, maybe in jwt.verify
