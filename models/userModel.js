@@ -46,6 +46,11 @@ const userSchema = new mongoose.Schema({
     },
     passwordResetExpires: {
         type: Date
+    },
+    active: {
+        type: Boolean,
+        default: true,
+        select: false
     }
 });
 
@@ -59,6 +64,11 @@ userSchema.pre('save', async function(next) {
 
     // delete passwordConfirm fields because it has not hash
     this.passwordConfirm = undefined;
+    next();
+});
+
+userSchema.pre(/^find/, async function(next) {
+    this.find({ active: { $ne: false } });
     next();
 });
 
