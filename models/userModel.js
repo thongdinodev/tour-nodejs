@@ -6,36 +6,40 @@ const crypto = require('crypto');
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'Please provide your name!'],
-        trim: true, 
-        lowercase: true
+        trim: true,
+        lowercase: true,
+        required: [true, 'Please provide a name']
     },
     email: {
         type: String,
-        required: [true, 'Please provide your email!'],
+        trim: true,
+        lowercase: true,
         unique: true,
-        validate: [validator.isEmail, 'please provide valid email!']
+        // validate: [validator.isEmail, 'Please provide valid email']
     },
-    photo: String,
+    photo: {
+        type: String
+    },
     role: {
         type: String,
-        enum: ['user', 'lead-guide', 'admin', 'guide'],
+        enum: ['user', 'guide', 'lead-guide', 'admin'],
         default: 'user'
-    },
-    password: {
+    }
+    ,password: {
         type: String,
-        required: [true, 'Please provide your password!'],
+        required: [true, 'Please provide a password'],
         minlength: 8,
         select: false
     },
     passwordConfirm: {
         type: String,
-        required: [true, 'Please provide your name!'],
+        required: [true, 'Please provide confirm password'],
         validate: {
-            validator: function(el) {
-                return el === this.password
+            // this only work on save()
+            validator: function (el) {
+                return el === this.password;
             },
-            message: 'Password are not the same'
+            message: 'Password are not the same!'
         }
     },
     passwordChangedAt: {
@@ -50,31 +54,36 @@ const userSchema = new mongoose.Schema({
     active: {
         type: Boolean,
         default: true,
-        select: false
+        select: false    
     }
 });
 
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();
 
-    // hash password
+    // hash the password with cost 12
     this.password = await bcrypt.hash(this.password, 12);
-    // hash: used for asynchonously, return a promise
-    // hashSync: used for synchonously
-
-    // delete passwordConfirm fields because it has not hash
+    
+    //delete passwordconfirm field
     this.passwordConfirm = undefined;
     next();
 });
 
-userSchema.pre(/^find/, async function(next) {
-    this.find({ active: { $ne: false } });
+userSchema.pre('save', function (next) {
+    if(!this.isModified('password') || this.isNew) return next();
+
+    this.passwordChangedAt = Date.now() - 1000;
     next();
 });
 
-// function to compare password user type vs user's password account
+userSchema.pre(/^find/, function (next) {
+    // this points to the current query
+    this.find({ active: { $ne: false } });
+    next();
+})
+
 userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
-    return bcrypt.compare(candidatePassword, userPassword);
+    return await bcrypt.compare(candidatePassword, userPassword);
 };
 
 userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
@@ -83,6 +92,7 @@ userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
         console.log(changedTimestamp, JWTTimestamp);
         return JWTTimestamp < changedTimestamp;
     }
+    
     return false;
 };
 
@@ -102,3 +112,4 @@ userSchema.methods.createPasswordResetToken = function() {
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
+
