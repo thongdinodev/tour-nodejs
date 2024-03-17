@@ -1,15 +1,8 @@
 const Tour = require('../models/tourModel');
 const factory = require('../controllers/handlerFactory');
+const catchAsync = require('../utils/catchAsync');
 
-exports.getAllTours = async (req, res) => {
-    try {
-        
-    } catch (error) {
-        res.status(400).json({
-            status: 'fail',
-            message: error
-        })
-    }
+exports.getAllTours = catchAsync(async (req, res, next) => {
     const tours = await Tour.find();
     res.status(200).json({
         status: 'success',
@@ -18,60 +11,27 @@ exports.getAllTours = async (req, res) => {
             data: tours
         }
     })
-};
+});
 
-exports.createTour = async (req, res, next) => {
-    try {
-        const newTour = await Tour.create(req.body);
-        res.status(201).json({
-            status: 'success',
-            message: {
-                data: newTour
-            }
-        })
-    } catch (error) {
-        res.status(400).json({
-            status: 'fail',
-            message: error
-        })
+
+exports.getTour = catchAsync(async (req, res, next) => {
+    const tour = await Tour.findById(req.params.id).populate('reviews');
+    // Tour.findOne({ _id: req.params.id })
+  
+    if (!tour) {
+      return next(new AppError('No tour found with that ID', 404));
     }
-    
-};
+  
+    res.status(200).json({
+      status: 'success',
+      data: {
+        tour
+      }
+    });
+});
 
-exports.getTour = async (req, res) => {
-    try {
-        const idSearch = req.params.id;
-        const tour = await Tour.findById(idSearch);
-        res.status(200).json({
-            status: 'success',
-            message: {
-                data: tour
-            }
-        });
-        
-    } catch (error) {
-        res.status(400).json({
-            status: 'fail',
-            message: error
-        })
-    }
 
-};
-
-exports.updateTour = (req, res) => {
-    try {
-        const idSearch = req.params.id;
-    
-        res.status(201).json({
-            status: 'success',
-            message: 'success update this tour ' + idSearch
-        })
-    } catch (error) {
-        res.status(400).json({
-            status: 'fail',
-            message: error
-        })
-    }
-};
-
+// FACTORY ROUTES
+exports.createTour = factory.createOne(Tour);
+exports.updateTour = factory.updateOne(Tour);
 exports.deleteTour = factory.deleteOne(Tour);

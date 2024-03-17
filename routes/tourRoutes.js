@@ -8,16 +8,22 @@ router.use('/:tourId/reviews', reviewRouter);
 router
     .route('/')
     .get(authController.protect, tourController.getAllTours)
-    .post(tourController.createTour);
+    .post(authController.protect,
+        authController.restrictTo('admin', 'lead-guide'),
+        tourController.createTour
+        )
 
 router
     .route('/:id')
     .get(tourController.getTour)
-    .patch(tourController.updateTour)
+    .patch(
+        authController.protect,
+        authController.restrictTo('admin', 'lead-guide'),
+        tourController.updateTour)
     .delete(
         authController.protect,
         authController.restrictTo('admin', 'lead-guide'), 
-        tourController.deleteTour);
+        tourController.deleteTour)
 
 
 module.exports = router;
