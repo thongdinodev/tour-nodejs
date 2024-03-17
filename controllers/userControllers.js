@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const AppError = require('../utils/appErrors');
 const catchAsync = require('../utils/catchAsync');
+const factory = require('../controllers/handlerFactory');
 
 const filterObj = (obj, ...allowedFields) => {
     const newObj = {};
@@ -74,9 +75,4 @@ exports.updateUser = (req, res) => {
     })
 };
 
-exports.deleteUser = (req, res) => {
-    res.status(500).json({
-        status: 'fail',
-        message: 'Api is not defined'
-    })
-};
+exports.deleteUser = factory.deleteOne(User);

@@ -1,9 +1,14 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appErrors');
 const Review = require('../models/reviewModel');
+const factory = require('../controllers/handlerFactory');
 
 exports.getAllReviews = catchAsync(async (req, res, next) => {
-    const reviews = await Review.find().populate('tour user');
+    let filter = {};
+    if (req.params.tourId) filter = { tour: req.params.tourId };
+
+    const reviews = await Review.find(filter);
+    
     if (!reviews) {
         return next(new AppError('Can not find any review', 400));
     }
@@ -29,5 +34,6 @@ exports.createReview = catchAsync(async (req, res, next) => {
                 newReview
             }
         });
-    
 });
+
+exports.deleteReview = factory.deleteOne(Review);
