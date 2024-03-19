@@ -124,6 +124,9 @@ tourSchema.virtual('reviews', {
     localField: '_id'
 });
 
+// COMPOUND INDEXES
+tourSchema.index({price: 1, ratingsAverage: -1});
+
 tourSchema.pre('save', function(next) {
     this.slug = slugify(this.name, { lower: true });
     next();
