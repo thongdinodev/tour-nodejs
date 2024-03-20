@@ -13,9 +13,18 @@ exports.getOverview = catchAsync(async (req, res, next) => {
     });
 });
 
-exports.getTour = (req, res, next) => {
-    res.status(200).render('tour', {
-        title: 'Detail tour',
-        tour: 'This is a detail tour page'
+exports.getTour = catchAsync(async (req, res, next) => {
+    const tour = await Tour.findOne({slug: req.params.slug}).populate({
+        path: 'reviews',
+        fields: 'rating user photo'
     });
-};
+
+    if (!tour) {
+        return next(new AppError('Can not find any tour with this slug name', 400));
+    };
+
+    res.status(200).render('tour', {
+        title: 'Detail Tour page',
+        tour
+    });
+});
