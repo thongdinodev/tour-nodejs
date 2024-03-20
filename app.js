@@ -6,22 +6,29 @@ const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
 const xss = require('xss-clean');
+const path = require('path');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
+const viewRouter = require('./routes/viewRoutes');
 
-const mongoose = require('mongoose');
 
 dotenv.config({ path: './config.env' });
 
 const app = express();
 
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+
+// serving static file
+// app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(`${__dirname}/public`));
+
+
+
 app.use(helmet());
-
-const port = process.env.PORT || 3000;
-const databaseURL = process.env.MONGODB_URL;
-
 app.use(express.json());
 app.use(morgan('dev'));
 app.use((req, res, next) => {
@@ -57,15 +64,13 @@ app.use(hpp({
     ]
 }));
 
-
-// connect database
-mongoose.connect(databaseURL).then(() => console.log('Success connected to MongoDB')).catch((err) => console.log(err));
-
 // USE ROUTES
-app.use('/tours', tourRouter);
-app.use('/users', userRouter);
-app.use('/reviews', reviewRouter);
 
-app.listen(port, () => {
-    console.log(`Server is running on port: ${port}`);
-});
+
+
+app.use('/api/tours', tourRouter);
+app.use('/api/users', userRouter);
+app.use('/api/reviews', reviewRouter);
+app.use('/', viewRouter);
+
+module.exports = app;
