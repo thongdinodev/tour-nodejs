@@ -60,7 +60,7 @@ exports.login = catchAsync(async (req, res, next) => {
 
     const user = await User.findOne({email}).select('+password');
     const correct = await user.correctPassword(password, user.password);
-    console.log(user);
+    
     // 2/ check correct password
     if (!correct) {
         return next(new AppError('Wrong password, please try again!', 401));
@@ -75,9 +75,11 @@ exports.protect = catchAsync(async (req, res, next) => {
     // 1) check is have headers authorization
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        token = req.headers.authorization.split(' ')[1];
-        
+        token = req.headers.authorization.split(' ')[1];        
+    } else if (req.cookies.jwt) {
+        token = req.cookies.jwt;
     }
+    console.log(token);
 
     if (!token) {
         return next(new AppError('You are not logged in, pls log in to get access', 401));

@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
 const xss = require('xss-clean');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -28,12 +29,14 @@ app.use(express.static(`${__dirname}/public`));
 
 
 
-app.use(helmet());
+app.use(
+    helmet({
+      contentSecurityPolicy: false,
+    })
+  );
 app.use(express.json());
 // app.use(morgan('dev'));
-app.use((req, res, next) => {
-    next();
-});
+
 
 // limit requests from same API
 const limiter = rateLimit({
@@ -45,6 +48,12 @@ app.use('/', limiter);
 
 // body parser, reading data from body into req.body
 app.use(express.json({ limit: '10kb' }));
+app.use(cookieParser());
+
+app.use((req, res, next) => {
+    console.log(req.cookies);
+    next();
+});
 
 // data sanitization against NoSQL query injection, reject: {$gte}
 app.use(mongoSanitize());
@@ -65,8 +74,6 @@ app.use(hpp({
 }));
 
 // USE ROUTES
-
-
 
 app.use('/api/tours', tourRouter);
 app.use('/api/users', userRouter);

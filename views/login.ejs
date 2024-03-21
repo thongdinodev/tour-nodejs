@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- meta tag to fix bug: Refused to load the script ... -->
+    <meta http-equiv="Content-Security-Policy" content="default-src gap://ready file://* *; style-src 'self' http://* https://* 'unsafe-inline'; script-src 'self' http://* https://* 'unsafe-inline' 'unsafe-eval'">
+
     <title>Project Tour NodeJS || <%= title %></title>
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,700" rel="stylesheet" />
     <link rel="stylesheet" href="css/style.css">
@@ -37,6 +41,7 @@
 
 <%- include('./partials/footer') %>
 
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script type="text/javascript" src="/js/login.js"></script>
 
 </body>
