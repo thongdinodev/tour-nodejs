@@ -71,6 +71,11 @@ exports.login = catchAsync(async (req, res, next) => {
 
 });
 
+exports.logout = (req, res, next) => {
+    res.clearCookie('jwt');
+    res.status(200).json({ status: 'success' });
+};
+
 exports.protect = catchAsync(async (req, res, next) => {
     // 1) check is have headers authorization
     let token;

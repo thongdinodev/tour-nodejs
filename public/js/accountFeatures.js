@@ -42,6 +42,25 @@ const loginUser = async (email, password) => {
     }
 };
 
+// LOGOUT feature
+
+const logoutUser = async (req, res, next) => {
+    try {
+        const res = await axios({
+            method: 'GET',
+            url: '/api/users/logout'
+        });
+        if (res.data.status === 'success') {
+            showAlert('success', 'Success to logout your account!');
+            window.setTimeout(() => {
+                location.assign('/');
+            }, 1500);
+        }
+    } catch (error) {
+        console.log('error', 'Error to logout account, please try again!');
+    }
+};
+
 
 
 // CONDITION TO EXCUTE CODE
@@ -55,4 +74,8 @@ if (loginForm) {
         
         loginUser(email, password);
     });
-}
+};
+
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', logoutUser);
+};
