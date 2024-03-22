@@ -47,7 +47,7 @@ exports.signup = catchAsync(async (req, res) => {
         role: req.body.role,
     });
 
-    createSendToken(newUser, 200, res);
+    createSendToken(newUser, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -79,7 +79,6 @@ exports.protect = catchAsync(async (req, res, next) => {
     } else if (req.cookies.jwt) {
         token = req.cookies.jwt;
     }
-    console.log(token);
 
     if (!token) {
         return next(new AppError('You are not logged in, pls log in to get access', 401));
@@ -106,8 +105,42 @@ exports.protect = catchAsync(async (req, res, next) => {
 
     // GRANT ACCESS TO PROTECTED ROUTE
     req.user = currentUser;
+    // assign res.locals.user to use render info current user is logging in 
+    res.locals.user = currentUser;
     next();
 
+});
+
+exports.isLoggedIn = catchAsync(async (req, res, next) => {
+    
+    if (req.cookies.jwt) {
+
+        //1) Verification token
+        // promisify: convert a callback fn to promise
+        // verify is a promise fn
+        const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+        //console.log(decoded); //{id:..., iat:..., exp:...}
+
+        // 2) check if user still exists
+        const currentUser = await User.findById(decoded.id);
+        if (!currentUser) {
+            return next();
+        }
+
+    
+        // 3)check if user changed password after the token was issued
+        // modifi userSchema: add timestamp, add method changedPassword, to check password is changed?
+        if (currentUser.changedPasswordAfter(decoded.iat)) {
+            return next();
+        };
+        
+        // GRANT ACCESS TO PROTECTED ROUTE
+        req.user = currentUser;
+        // assign res.locals.user to use render info current user is logging in 
+        res.locals.user = currentUser;
+        return next();
+    }
+    next();
 });
 
 exports.restrictTo = (...roles) => {

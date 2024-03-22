@@ -9,15 +9,18 @@ const xss = require('xss-clean');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 
+const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const viewRouter = require('./routes/viewRoutes');
 
+const AppError = require('./utils/appErrors');
 
 dotenv.config({ path: './config.env' });
 
 const app = express();
+app.use(helmet({ contentSecurityPolicy: false }));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -25,16 +28,10 @@ app.set('views', path.join(__dirname, 'views'));
 
 // serving static file
 // app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(`${__dirname}/public`));
+app.use(express.static(path.join(__dirname, 'public')));
 
 
 
-app.use(
-    helmet({
-      contentSecurityPolicy: false,
-    })
-  );
-app.use(express.json());
 // app.use(morgan('dev'));
 
 
@@ -51,7 +48,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(cookieParser());
 
 app.use((req, res, next) => {
-    console.log(req.cookies);
+    // console.log(req.cookies);
     next();
 });
 
@@ -73,11 +70,22 @@ app.use(hpp({
     ]
 }));
 
+app.use(express.json());
 // USE ROUTES
 
 app.use('/api/tours', tourRouter);
 app.use('/api/users', userRouter);
 app.use('/api/reviews', reviewRouter);
 app.use('/', viewRouter);
+
+app.all('*', (req, res, next) => {
+    
+
+    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+
+
+app.use(globalErrorHandler);
 
 module.exports = app;
