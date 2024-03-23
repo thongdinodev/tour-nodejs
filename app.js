@@ -8,6 +8,7 @@ const hpp = require('hpp');
 const xss = require('xss-clean');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
@@ -45,6 +46,7 @@ app.use('/', limiter);
 
 // body parser, reading data from body into req.body
 app.use(express.json({ limit: '10kb' }));
+app.use(bodyParser.urlencoded({ extended: false, limit: '10kb' }));
 app.use(cookieParser());
 
 app.use((req, res, next) => {
