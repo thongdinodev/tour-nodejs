@@ -119,31 +119,35 @@ exports.protect = catchAsync(async (req, res, next) => {
 exports.isLoggedIn = catchAsync(async (req, res, next) => {
     
     if (req.cookies.jwt) {
+        try {
+            
+            //1) Verification token
+            // promisify: convert a callback fn to promise
+            // verify is a promise fn
+            const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+            //console.log(decoded); //{id:..., iat:..., exp:...}
 
-        //1) Verification token
-        // promisify: convert a callback fn to promise
-        // verify is a promise fn
-        const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
-        //console.log(decoded); //{id:..., iat:..., exp:...}
+            // 2) check if user still exists
+            const currentUser = await User.findById(decoded.id);
+            if (!currentUser) {
+                return next();
+            }
 
-        // 2) check if user still exists
-        const currentUser = await User.findById(decoded.id);
-        if (!currentUser) {
+        
+            // 3)check if user changed password after the token was issued
+            // modifi userSchema: add timestamp, add method changedPassword, to check password is changed?
+            if (currentUser.changedPasswordAfter(decoded.iat)) {
+                return next();
+            };
+            
+            // GRANT ACCESS TO PROTECTED ROUTE
+            req.user = currentUser;
+            // assign res.locals.user to use render info current user is logging in 
+            res.locals.user = currentUser;
+            return next();
+        } catch (error) {
             return next();
         }
-
-    
-        // 3)check if user changed password after the token was issued
-        // modifi userSchema: add timestamp, add method changedPassword, to check password is changed?
-        if (currentUser.changedPasswordAfter(decoded.iat)) {
-            return next();
-        };
-        
-        // GRANT ACCESS TO PROTECTED ROUTE
-        req.user = currentUser;
-        // assign res.locals.user to use render info current user is logging in 
-        res.locals.user = currentUser;
-        return next();
     }
     next();
 });

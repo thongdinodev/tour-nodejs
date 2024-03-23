@@ -19,7 +19,7 @@ exports.getOverview = catchAsync(async (req, res, next) => {
 
 
     res.status(200).render('overview', {
-        title: 'All tour Page',
+        title: 'All tours',
         tours,
         isHaveUser,
         user: userData
@@ -33,7 +33,7 @@ exports.getTour = catchAsync(async (req, res, next) => {
     });
 
     if (!tour) {
-        return next(new AppError('Can not find any tour with this slug name', 400));
+        return next(new AppError('Can not find any tour with this name', 404));
     };
 
     const userData = res.locals.user;
@@ -41,7 +41,7 @@ exports.getTour = catchAsync(async (req, res, next) => {
 
 
     res.status(200).render('tour', {
-        title: 'Detail Tour page',
+        title: 'Detail Tour',
         tour,
         isHaveUser,
         user: userData
@@ -57,5 +57,15 @@ exports.getLoginForm = (req, res, next) => {
         title: 'Login to your account',
         isHaveUser,
         user: userData
-    })
+    });
+};
+
+exports.getAccount = (req, res, next) => {
+    isHaveUser = checkUserLogin(req.user);
+
+    res.status(200).render('account', {
+        title: 'Your account',
+        isHaveUser,
+        user: req.user
+    });
 };
