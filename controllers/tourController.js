@@ -1,14 +1,87 @@
+const multer = require('multer');
+const sharp = require('sharp');
+
 const Tour = require('../models/tourModel');
 const factory = require('../controllers/handlerFactory');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appErrors');
 
+// MULTER CONFIG
+
+const multerStorage = multer.memoryStorage();
+
+const multerFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image')) {
+        cb(null, true);
+    } else {
+        cb(new AppError('Not and image! Please upload only images.', 400), false);
+    }
+};
+
+const upload = multer({
+    storage: multerStorage,
+    fileFilter: multerFilter
+});
+
+exports.uploadTourImages = upload.fields([
+    {name: 'imageCover', maxCount: 1},
+    {name: 'images', maxCount: 3}
+]);
+
 // FACTORY ROUTES
 exports.getAllTours = factory.getAll(Tour);
 exports.getTour = factory.getOne(Tour, { path: 'reviews' });
 exports.createTour = factory.createOne(Tour);
-exports.updateTour = factory.updateOne(Tour);
 exports.deleteTour = factory.deleteOne(Tour);
+
+exports.updateTour = catchAsync(async (req, res, next) => {
+  if (!req.files.imageCover && !req.files.images) return next();
+  
+  // 1) Cover image
+  req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`
+
+  await sharp(req.files.imageCover[0].buffer)
+      .resize(2000, 1333)
+      .toFormat('jpeg')
+      .jpeg({quality: 90 })
+      .toFile(`public/img/tours/${req.body.imageCover}`);
+  
+  // 2) Images
+  req.body.images = [];
+
+  await Promise.all(
+      req.files.images.map(async (file, index) => {
+          const filename = `tour-${req.params.id}-${Date.now()}-${index + 1}.jpeg`;
+
+          await sharp(file.buffer)
+              .resize(2000, 1333)
+              .toFormat('jpeg')
+              .jpeg({quality: 90 })
+              .toFile(`public/img/tours/${filename}`);
+
+          req.body.images.push(filename);
+      })
+  );
+
+  console.log(req.body);
+  // END HANDLER IMAGE
+  
+  const doc = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+  });
+
+  if (!doc) {
+      return next(new AppError('No document found with that ID', 404));
+  }
+
+  res.status(200).json({
+      status: 'success',
+      data: {
+          data: doc
+      }
+  });
+});
 
 exports.getToursWithin = catchAsync(async (req, res, next) => {
     const {distance, latlng, unit} = req.params;
