@@ -5,7 +5,9 @@ const formPassword = document.querySelector('.form-user-settings');
 
 // USE API TO UPDATE DATA
 const updateSetting = async (data, type) => {
-    const url = (type === 'password') ? '/api/users/updateMyPassword' : '/api/users/updateMe'
+    const url = (type === 'password') 
+            ? '/api/users/updateMyPassword' 
+            : '/api/users/updateMe'
     try {
         const res = await axios({
             method: 'PATCH',
@@ -14,6 +16,9 @@ const updateSetting = async (data, type) => {
         });
         if (res.data.status === 'success') {
             showAlert('success', `Success to update your ${type.toUpperCase()}!`);
+            window.setTimeout(() => {
+                location.assign('/me');
+            });
         }
     } catch (error) {
         showAlert('error', error.response.data.message);
@@ -23,10 +28,15 @@ const updateSetting = async (data, type) => {
 if (formUserData) {
     formUserData.addEventListener('submit', (e) => {
         e.preventDefault();
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
 
-        updateSetting({name, email}, 'data');
+        // use FormData with data can not input
+        const form = new FormData();
+
+        form.append('name', document.getElementById('name').value);
+        form.append('email', document.getElementById('email').value);
+        form.append('photo', document.getElementById('photo').files[0]);
+       
+        updateSetting(form, 'data');
     });
 };
 

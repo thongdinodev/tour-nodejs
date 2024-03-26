@@ -55,6 +55,7 @@ exports.uploadUserPhoto = upload.single('photo');
 
 
 exports.updateMe = catchAsync(async (req, res, next) => {
+    console.log(req.file);
     // 1) if create error if user POSTs password data
     if (req.body.password || req.body.passwordConfirm) {
         return next(new AppError('This route is not for update password, please use /updateMyPassword', 400));
@@ -66,7 +67,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     if (req.file) {
         req.file.filename = `user-${req.user._id}-${Date.now()}.jpeg`;
 
-        if (req.file.filename) filteredBody.photo = req.file.filename; // update photo field(model)
+        filteredBody.photo = req.file.filename; // update photo field(model)
         // filteredBody = {name, email, photo: ...};
         await sharp(req.file.buffer)
                 .resize(500, 500)

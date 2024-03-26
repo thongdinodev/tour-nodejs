@@ -16,6 +16,8 @@ exports.getOverview = catchAsync(async (req, res, next) => {
 
     const userData = res.locals.user;
     isHaveUser = checkUserLogin(userData);
+    console.log(res.locals);
+    console.log(isHaveUser);
 
 
     res.status(200).render('overview', {
@@ -29,7 +31,7 @@ exports.getOverview = catchAsync(async (req, res, next) => {
 exports.getTour = catchAsync(async (req, res, next) => {
     const tour = await Tour.findOne({slug: req.params.slug}).populate({
         path: 'reviews',
-        fields: 'rating user photo'
+        fields: 'rating user review'
     });
 
     if (!tour) {
@@ -55,6 +57,18 @@ exports.getLoginForm = (req, res, next) => {
 
     res.status(200).render('login', {
         title: 'Login to your account',
+        isHaveUser,
+        user: userData
+    });
+};
+
+exports.getSignupForm = (req, res, next) => {
+    const userData = res.locals.user;
+    isHaveUser = checkUserLogin(userData);
+
+
+    res.status(200).render('signup', {
+        title: 'Signup',
         isHaveUser,
         user: userData
     });
