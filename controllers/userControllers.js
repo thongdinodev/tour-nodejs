@@ -55,6 +55,7 @@ exports.uploadUserPhoto = upload.single('photo');
 
 
 exports.updateMe = catchAsync(async (req, res, next) => {
+    console.log(req.body);
     console.log(req.file);
     // 1) if create error if user POSTs password data
     if (req.body.password || req.body.passwordConfirm) {

@@ -15,6 +15,7 @@ const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const viewRouter = require('./routes/viewRoutes');
+const bookingRouter = require('./routes/bookingRoutes');
 
 const AppError = require('./utils/appErrors');
 
@@ -78,6 +79,7 @@ app.use(express.json());
 app.use('/api/tours', tourRouter);
 app.use('/api/users', userRouter);
 app.use('/api/reviews', reviewRouter);
+app.use('/api/bookings', bookingRouter);
 app.use('/', viewRouter);
 
 app.all('*', (req, res, next) => {

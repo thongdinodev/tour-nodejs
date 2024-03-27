@@ -154,7 +154,11 @@
           <p class="cta__text">
             <%= tour.duration %> days. 1 adventure. Infinite memories. Make it yours today!
           </p>
-          <button class="btn btn--green span-all-rows">Book tour now!</button>
+          <% if (isHaveUser) { %> 
+            <button class="btn btn--green span-all-rows" id="book-tour" data-tour-id="<%= tour.id %>">Book tour now!</button>
+          <% } else { %>
+            <a class="btn btn--green span-all-rows" href="/login">Login to book tour!</a>
+          <% } %>
         </div>
       </div>
     </section>
