@@ -1,6 +1,7 @@
 
 require('dotenv').config();
-const stripe = require('stripe')("sk_test_51Oyx4oH3yLB7VM2cWXFiQPUcg1XPyXuYy3uNQY62JFxlPy9ybZOLmwe0bjKAYQ45Fa3qiV0BoKiJ7dOkK3rrmCVq001H5uk0H2");
+// const stripe = require('stripe')("sk_test_51Oyx4oH3yLB7VM2cWXFiQPUcg1XPyXuYy3uNQY62JFxlPy9ybZOLmwe0bjKAYQ45Fa3qiV0BoKiJ7dOkK3rrmCVq001H5uk0H2");
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const Tour = require('../models/tourModel');
 const User = require('../models/userModel');
@@ -61,21 +62,19 @@ const createBookingCheckout = async (session) => {
   const price = session.amount_total / 100;
 
   const newBooking = ({tour, user, price});
-  console.log(newBooking);
 
   await Booking.create(newBooking);
 }
 
 exports.webhookCheckout = (req, res, next) => {
     const signature = req.headers['stripe-signature'];
-    console.log(signature);
 
     let event;
     try {
       event = stripe.webhooks.constructEvent(
           req.body, 
           signature, 
-          "whsec_EEO6ugoR64fCh2fsfCJzXzoHdFexCd5b"
+          STRIPE_WEBHOOK_SECRET
       );
     } catch (error) {
         return res.status(400).send(`Webhook error: ${error.message}`);
