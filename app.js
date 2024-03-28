@@ -9,6 +9,7 @@ const xss = require('xss-clean');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
@@ -16,17 +17,24 @@ const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const viewRouter = require('./routes/viewRoutes');
 const bookingRouter = require('./routes/bookingRoutes');
+const bookingController = require('./controllers/bookingController');
 
 const AppError = require('./utils/appErrors');
 
 dotenv.config({ path: './config.env' });
 
 const app = express();
+
+app.enable('trust proxy');
+
 app.use(helmet({ contentSecurityPolicy: false }));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+app.use(cors());
+
+app.options('/api/tours/:id', cors());
 
 // serving static file
 // app.use(express.static(path.join(__dirname, 'public')));
@@ -43,7 +51,13 @@ const limiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     message: 'Too many requests from this IP, please try again in an hour' 
 });
-app.use('/', limiter);
+app.use('/api', limiter);
+
+app.post(
+    '/webhook-checkout', 
+    bodyParser.raw({ type: 'application/json' }),
+    bookingController.webhookCheckout
+);
 
 // body parser, reading data from body into req.body
 app.use(express.json({ limit: '10kb' }));
