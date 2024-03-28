@@ -10,6 +10,8 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const compression = require('compression');
+
 
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
@@ -25,7 +27,7 @@ dotenv.config({ path: './config.env' });
 
 const app = express();
 
-app.enable('trust proxy');
+//app.set('trust proxy', false);
 
 app.use(helmet({ contentSecurityPolicy: false }));
 
@@ -55,7 +57,7 @@ app.use('/api', limiter);
 
 app.post(
     '/webhook-checkout', 
-    bodyParser.raw({ type: 'application/json' }),
+    express.raw({type: 'application/json'}),
     bookingController.webhookCheckout
 );
 
@@ -86,6 +88,8 @@ app.use(hpp({
         'price'
     ]
 }));
+
+app.use(compression());
 
 app.use(express.json());
 // USE ROUTES
