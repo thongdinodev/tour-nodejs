@@ -27,7 +27,7 @@ dotenv.config({ path: './config.env' });
 
 const app = express();
 
-//app.set('trust proxy', false);
+app.set('trust proxy', false);
 
 app.use(helmet({ contentSecurityPolicy: false }));
 

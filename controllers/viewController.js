@@ -88,7 +88,9 @@ exports.getMyTours = catchAsync(async (req, res, next) => {
 
     isHaveUser = checkUserLogin(req.user);
     // 1) Find all bookings
-    const bookings = await Booking.find({user: req.user.id});
+    const bookings = await Booking.find({user: req.user._id});
+    
+    console.log(bookings);
 
     // 2) Find tours with the returnedIDs
     const tourIDs = bookings.map((el) => el.tour._id);
