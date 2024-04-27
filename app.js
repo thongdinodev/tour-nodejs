@@ -11,6 +11,7 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const compression = require('compression');
+const cron = require('node-cron')
 
 
 const globalErrorHandler = require('./controllers/errorController');
@@ -94,11 +95,23 @@ app.use(compression());
 app.use(express.json());
 // USE ROUTES
 
+const wakeupServer = app.get('/api/wakeup', (req, res, next) => {
+    console.log('Server is waked up')
+    res.status(200).json({
+        status: 'success',
+        message: 'Server is waked up!'
+    })
+})
+
 app.use('/api/tours', tourRouter);
 app.use('/api/users', userRouter);
 app.use('/api/reviews', reviewRouter);
 app.use('/api/bookings', bookingRouter);
 app.use('/', viewRouter);
+
+cron.schedule('0 */14 * * * *', () => {
+    app.use(wakeupServer())
+})
 
 app.all('*', (req, res, next) => {
     
